@@ -13,10 +13,14 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 ALLOWED_EXTENSIONS = {"xls", "xlsx"}
 
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+database_url = os.environ.get(
     "DATABASE_URL",
     f"sqlite:///{os.path.join(BASE_DIR, 'armotization.db')}"
 )
+# Render/Railway provide postgres:// but SQLAlchemy requires postgresql://
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
