@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statement Splitter</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 32px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #444;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px dashed #d0d5dd;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            background: #fafbfc;
+            cursor: pointer;
+        }
+        input[type="file"]:hover { border-color: #4a90d9; }
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #1557b0; }
+        .flash {
+            background: #fef3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .info {
+            font-size: 12px;
+            color: #888;
+            margin-top: -16px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Statement Splitter</h1>
+        <p class="subtitle">Upload your KCB bank statement to split funds between you and 254722157047</p>
+
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="flash">{{ msg }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <label for="statement">Bank Statement (.xls)</label>
+            <input type="file" name="statement" id="statement" accept=".xls,.xlsx" required>
+
+            <label for="fee_to_other">Fee to 254722157047 from your income (KES)</label>
+            <input type="number" name="fee_to_other" id="fee_to_other" placeholder="e.g. 260000" step="0.01" value="0">
+            <p class="info">Amount deducted from your Finclutech income as fees owed to the other party</p>
+
+            <button type="submit">Generate Report</button>
+        </form>
+    </div>
+</body>
+</html>

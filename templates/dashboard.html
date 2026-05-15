@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Statement Splitter{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome { margin-bottom: 24px; }
+    .welcome h2 { font-size: 22px; color: #1a1a2e; }
+    .welcome p { color: #666; font-size: 14px; margin-top: 4px; }
+    .actions { margin-bottom: 28px; }
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+    .stat-card {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stat-card .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 24px; font-weight: 700; margin-top: 4px; }
+    .stat-card .value.green { color: #0f9d58; }
+    .stat-card .value.red { color: #d93025; }
+    .stat-card .value.blue { color: #1a73e8; }
+
+    .history { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .history h3 { padding: 18px 20px 0; font-size: 16px; color: #1a1a2e; }
+    .history table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .history th {
+        text-align: left; padding: 10px 20px; font-size: 12px;
+        text-transform: uppercase; letter-spacing: 0.5px; color: #666;
+        background: #f8f9fb; border-bottom: 2px solid #e8ecf1;
+    }
+    .history td { padding: 12px 20px; border-bottom: 1px solid #f0f2f5; }
+    .history tr:last-child td { border-bottom: none; }
+    .amount { text-align: right; font-variant-numeric: tabular-nums; }
+    .badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 11px; font-weight: 600;
+    }
+    .badge-ok { background: #e8f5e9; color: #2e7d32; }
+    .badge-err { background: #fce4ec; color: #c62828; }
+    .empty-state {
+        padding: 48px 20px;
+        text-align: center;
+        color: #888;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="welcome">
+    <h2>Welcome, {{ current_user.display_name }}</h2>
+    <p>Co-op Bank account split between <strong>{{ current_user.display_name }}</strong> and <strong>{{ current_user.other_name }}</strong></p>
+</div>
+
+<div class="actions">
+    <a href="{{ url_for('upload') }}" class="btn">Upload New Statement</a>
+</div>
+
+{% if statements %}
+<div class="stats">
+    <div class="stat-card">
+        <div class="label">Statements Uploaded</div>
+        <div class="value">{{ statements|length }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">{{ current_user.display_name }}'s Balance</div>
+        <div class="value green">{{ "{:,.2f}".format(statements[0].my_remaining) }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">{{ current_user.other_name }}'s Balance</div>
+        <div class="value blue">{{ "{:,.2f}".format(statements[0].other_remaining) }}</div>
+    </div>
+</div>
+{% endif %}
+
+<div class="history">
+    <h3>Statement History</h3>
+    {% if statements %}
+    <table>
+        <tr>
+            <th>Uploaded</th>
+            <th>Period</th>
+            <th>File</th>
+            <th class="amount">{{ current_user.display_name }}'s Share</th>
+            <th class="amount">{{ current_user.other_name }}'s Share</th>
+            <th class="amount">Closing</th>
+            <th>Status</th>
+            <th></th>
+        </tr>
+        {% for s in statements %}
+        <tr>
+            <td>{{ s.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ s.period or '-' }}</td>
+            <td><a href="{{ url_for('view_report', record_id=s.id) }}" class="link">{{ s.filename[:40] }}</a></td>
+            <td class="amount">{{ "{:,.2f}".format(s.my_remaining) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(s.other_remaining) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(s.closing_balance) }}</td>
+            <td>
+                {% if s.is_verified %}
+                <span class="badge badge-ok">Verified</span>
+                {% else %}
+                <span class="badge badge-err">Mismatch</span>
+                {% endif %}
+            </td>
+            <td>
+                <form action="{{ url_for('delete_report', record_id=s.id) }}" method="POST"
+                      onsubmit="return confirm('Delete this statement?')">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No statements uploaded yet. Upload your first Co-op Bank statement to get started.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

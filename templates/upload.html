@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Upload Statement - Statement Splitter{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 40px;
+        max-width: 500px;
+        margin: 40px auto;
+    }
+    .upload-card h2 { font-size: 22px; margin-bottom: 8px; color: #1a1a2e; }
+    .upload-card .subtitle { color: #666; font-size: 14px; margin-bottom: 28px; }
+    input[type="file"] {
+        width: 100%;
+        padding: 14px;
+        border: 2px dashed #d0d5dd;
+        border-radius: 8px;
+        background: #fafbfc;
+        cursor: pointer;
+    }
+    input[type="file"]:hover { border-color: #0d4d1a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-card">
+    <h2>Upload Statement</h2>
+    <p class="subtitle">Upload your Co-op Bank statement to generate the funds split between <strong>{{ current_user.display_name }}</strong> and <strong>{{ current_user.other_name }}</strong></p>
+
+    <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="statement">Bank Statement (.xls / .xlsx)</label>
+            <input type="file" name="statement" id="statement" accept=".xls,.xlsx" required>
+        </div>
+
+        <div class="form-group">
+            <label for="fee_to_other">Fee to {{ current_user.other_name }} from {{ current_user.display_name }}'s income (KES)</label>
+            <input type="number" name="fee_to_other" id="fee_to_other" placeholder="e.g. 260000" step="0.01" value="0">
+            <p class="hint">Amount deducted from {{ current_user.display_name }}'s income as fees owed to {{ current_user.other_name }}</p>
+        </div>
+
+        <button type="submit" class="btn btn-full">Generate Report</button>
+    </form>
+</div>
+{% endblock %}

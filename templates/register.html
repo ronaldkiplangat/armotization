@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Register - Statement Splitter{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h2>Create Account</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="display_name">Your Name</label>
+            <input type="text" name="display_name" id="display_name" required autofocus placeholder="e.g. Ronald">
+        </div>
+        <div class="form-group">
+            <label for="other_name">Other Party's Name</label>
+            <input type="text" name="other_name" id="other_name" required placeholder="e.g. Hillary">
+        </div>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required minlength="6">
+        </div>
+        <div class="form-group">
+            <label for="my_phone">Your M-Pesa Number</label>
+            <input type="text" name="my_phone" id="my_phone" placeholder="254XXXXXXXXX">
+        </div>
+        <div class="form-group">
+            <label for="other_phone">Other Party's M-Pesa Number</label>
+            <input type="text" name="other_phone" id="other_phone" placeholder="254XXXXXXXXX">
+        </div>
+        <button type="submit" class="btn btn-full">Register</button>
+    </form>
+    <p style="text-align:center; margin-top:16px; font-size:14px;">
+        Already have an account? <a href="{{ url_for('login') }}" class="link">Login</a>
+    </p>
+</div>
+{% endblock %}

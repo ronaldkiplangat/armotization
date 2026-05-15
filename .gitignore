@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+armotization.db
+uploads/
+.env
+*.xls
+*.xlsx

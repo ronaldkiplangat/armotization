@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Statement Splitter{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: #0d4d1a;
+            color: #fff;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .navbar .brand {
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            color: #fff;
+        }
+        .navbar .brand span { color: #8bc34a; }
+        .navbar nav { display: flex; align-items: center; gap: 18px; }
+        .navbar nav a {
+            color: rgba(255,255,255,0.85);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .navbar nav a:hover { color: #fff; }
+        .navbar .user-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            color: #8bc34a;
+            font-weight: 600;
+        }
+        .page { padding: 32px 24px; max-width: 960px; margin: 0 auto; }
+        .flash-list { list-style: none; margin-bottom: 20px; }
+        .flash-list li {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 10px 16px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #856404;
+        }
+        .flash-list li.info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+
+        .form-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 40px;
+            max-width: 440px;
+            margin: 60px auto;
+        }
+        .form-card h2 { font-size: 22px; margin-bottom: 24px; color: #1a1a2e; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #444;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+        .form-group input:focus { outline: none; border-color: #0d4d1a; }
+        .form-group .hint { font-size: 12px; color: #888; margin-top: 3px; }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #0d4d1a;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #0a3a14; }
+        .btn-full { width: 100%; }
+        .btn-outline {
+            background: transparent;
+            color: #0d4d1a;
+            border: 2px solid #0d4d1a;
+        }
+        .btn-outline:hover { background: #0d4d1a; color: #fff; }
+        .btn-danger { background: #d93025; }
+        .btn-danger:hover { background: #b71c1c; }
+        .btn-sm { padding: 6px 14px; font-size: 13px; }
+        .link { color: #0d4d1a; font-weight: 500; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if current_user and current_user.is_authenticated %}
+    <div class="navbar">
+        <a href="/" class="brand"><span>Co-op</span> Statement Splitter</a>
+        <nav>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('upload') }}">Upload</a>
+            <a href="{{ url_for('settings') }}">Settings</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+            <span class="user-badge">{{ current_user.display_name }}</span>
+        </nav>
+    </div>
+    {% endif %}
+
+    <div class="page">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <ul class="flash-list">
+            {% for category, msg in messages %}
+            <li class="{{ category }}">{{ msg }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

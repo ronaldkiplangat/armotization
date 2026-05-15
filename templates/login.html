@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Login - Statement Splitter{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h2>Login</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-full">Login</button>
+    </form>
+    <p style="text-align:center; margin-top:16px; font-size:14px;">
+        Don't have an account? <a href="{{ url_for('register') }}" class="link">Register</a>
+    </p>
+</div>
+{% endblock %}

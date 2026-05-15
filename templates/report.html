@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block title %}Report - Statement Splitter{% endblock %}
+
+{% block extra_css %}
+<style>
+    h2 {
+        font-size: 18px; margin: 32px 0 12px; padding-bottom: 8px;
+        border-bottom: 2px solid #e8ecf1; color: #1a1a2e;
+    }
+    h3 { font-size: 15px; margin: 20px 0 8px; color: #444; }
+    .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px; margin-bottom: 24px;
+    }
+    .card {
+        background: #fff; border-radius: 10px; padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .card .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .card .value.green { color: #0f9d58; }
+    .card .value.red { color: #d93025; }
+    .card .value.blue { color: #1a73e8; }
+    .section {
+        background: #fff; border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06); padding: 24px; margin-bottom: 20px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th {
+        text-align: left; padding: 8px 12px; background: #f8f9fb;
+        font-weight: 600; font-size: 12px; text-transform: uppercase;
+        letter-spacing: 0.5px; color: #666; border-bottom: 2px solid #e8ecf1;
+    }
+    td { padding: 8px 12px; border-bottom: 1px solid #f0f2f5; }
+    tr:last-child td { border-bottom: none; }
+    .amount { text-align: right; font-variant-numeric: tabular-nums; }
+    .total-row { font-weight: 700; background: #f8f9fb; }
+    .total-row td { border-top: 2px solid #e8ecf1; }
+    .deficit { color: #d93025; }
+    .surplus { color: #0f9d58; }
+    .verification {
+        background: #e8f5e9; border: 1px solid #a5d6a7;
+        border-radius: 10px; padding: 20px; margin-top: 24px;
+    }
+    .verification.mismatch { background: #fce4ec; border-color: #ef9a9a; }
+    @media print {
+        .navbar, .no-print { display: none !important; }
+        body { padding: 0; background: #fff; }
+        .section { box-shadow: none; border: 1px solid #eee; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="no-print" style="margin-bottom:20px;">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline btn-sm">&larr; Dashboard</a>
+    <button onclick="window.print()" class="btn btn-sm" style="margin-left:8px;">Print Report</button>
+</div>
+
+<h1>Statement Report</h1>
+<p class="meta">
+    {{ r.account_name }} &mdash; Account {{ r.account_no }} &mdash; {{ r.currency }}
+    {% if r.period %} &mdash; {{ r.period }}{% endif %}
+    {% if r.branch %} &mdash; {{ r.branch }}{% endif %}
+</p>
+
+<!-- Summary Cards -->
+<div class="cards">
+    <div class="card">
+        <div class="label">Opening Balance</div>
+        <div class="value">{{ "{:,.2f}".format(r.opening_balance) }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Total Credits</div>
+        <div class="value green">{{ "{:,.2f}".format(r.total_credit) }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Total Debits</div>
+        <div class="value red">{{ "{:,.2f}".format(r.total_debit) }}</div>
+    </div>
+    <div class="card">
+        <div class="label">Closing Balance</div>
+        <div class="value blue">{{ "{:,.2f}".format(r.closing_balance) }}</div>
+    </div>
+</div>
+
+<!-- CREDITS -->
+<h2>Credits (Income)</h2>
+
+<div class="section">
+    <h3>{{ my_name }}'s Income</h3>
+    <table>
+        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        {% for t in r.my_income %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td>{{ t.details[:80] }}</td>
+            <td class="amount">{{ "{:,.2f}".format(t.credit) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="2">{{ my_name }}'s Gross Income</td>
+            <td class="amount">{{ "{:,.2f}".format(r.my_income_total) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="2">Less: Fees to {{ other_name }}</td>
+            <td class="amount deficit">({{ "{:,.2f}".format(r.fee_to_other) }})</td>
+        </tr>
+        <tr class="total-row">
+            <td colspan="2">{{ my_name }}'s Net Income</td>
+            <td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="section">
+    <h3>{{ other_name }}'s Credits</h3>
+    <table>
+        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        {% for t in r.other_party_credits %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td>{{ t.details[:80] }}</td>
+            <td class="amount">{{ "{:,.2f}".format(t.credit) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="2">Subtotal</td>
+            <td class="amount">{{ "{:,.2f}".format(r.other_party_credits_total) }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- DEBITS -->
+<h2>Debits (Payments Out)</h2>
+
+<div class="section">
+    <h3>M-Pesa Transfers to {{ my_name }} ({{ my_phone }})</h3>
+    <table>
+        <tr><th>Date</th><th class="amount">Amount</th></tr>
+        {% for t in r.my_transfers %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td>Subtotal ({{ r.my_transfers|length }} transfers)</td>
+            <td class="amount">{{ "{:,.2f}".format(r.my_transfers_total) }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="section">
+    <h3>M-Pesa Transfers to {{ other_name }} ({{ other_phone }})</h3>
+    <table>
+        <tr><th>Date</th><th class="amount">Amount</th></tr>
+        {% for t in r.other_transfers %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td>Subtotal ({{ r.other_transfers|length }} transfers)</td>
+            <td class="amount">{{ "{:,.2f}".format(r.other_transfers_total) }}</td>
+        </tr>
+    </table>
+</div>
+
+{% if r.my_subscriptions %}
+<div class="section">
+    <h3>{{ my_name }}'s Subscriptions / Online Purchases</h3>
+    <table>
+        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        {% for t in r.my_subscriptions %}
+        <tr>
+            <td>{{ t.date }}</td>
+            <td>{{ t.details[:80] }}</td>
+            <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="2">Subtotal</td>
+            <td class="amount">{{ "{:,.2f}".format(r.my_subscriptions_total) }}</td>
+        </tr>
+    </table>
+</div>
+{% endif %}
+
+<!-- Bank Charges -->
+<h2>Bank Charges (All Borne by {{ my_name }})</h2>
+
+<div class="section">
+    <h3>Charges on {{ my_name }}'s Transfers</h3>
+    <table>
+        <tr><th>Date</th><th class="amount">Transfer</th><th class="amount">Commission</th><th class="amount">Excise</th><th class="amount">Safaricom</th><th class="amount">Total</th></tr>
+        {% for c in r.my_bank_charges %}
+        <tr>
+            <td>{{ c.date }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.transfer_amount) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.commission) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.excise) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.safaricom) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="5">Subtotal</td>
+            <td class="amount">{{ "{:,.2f}".format(r.my_bank_charges_total) }}</td>
+        </tr>
+    </table>
+</div>
+
+<div class="section">
+    <h3>Charges on {{ other_name }}'s Transfers</h3>
+    <table>
+        <tr><th>Date</th><th class="amount">Transfer</th><th class="amount">Commission</th><th class="amount">Excise</th><th class="amount">Safaricom</th><th class="amount">Total</th></tr>
+        {% for c in r.other_bank_charges %}
+        <tr>
+            <td>{{ c.date }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.transfer_amount) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.commission) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.excise) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.safaricom) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(c.total) }}</td>
+        </tr>
+        {% endfor %}
+        <tr class="total-row">
+            <td colspan="5">Subtotal</td>
+            <td class="amount">{{ "{:,.2f}".format(r.other_bank_charges_total) }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- FINAL SPLIT -->
+<h2>Money Split</h2>
+
+<div class="section">
+    <h3>{{ my_name }}'s Funds</h3>
+    <table>
+        <tr><td>{{ my_name }}'s net income ({{ "{:,.2f}".format(r.my_income_total) }} - {{ "{:,.2f}".format(r.fee_to_other) }} fees)</td><td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td></tr>
+        <tr><td>Opening balance</td><td class="amount">{{ "{:,.2f}".format(r.opening_balance) }}</td></tr>
+        <tr class="total-row"><td>Total {{ my_name }}'s funds</td><td class="amount">{{ "{:,.2f}".format(r.my_total_funds) }}</td></tr>
+    </table>
+
+    <h3 style="margin-top:16px">{{ my_name }}'s Spending</h3>
+    <table>
+        <tr><td>M-Pesa to {{ my_name }} ({{ r.my_transfers|length }} transfers)</td><td class="amount">{{ "{:,.2f}".format(r.my_transfers_total) }}</td></tr>
+        <tr><td>Subscriptions / purchases</td><td class="amount">{{ "{:,.2f}".format(r.my_subscriptions_total) }}</td></tr>
+        <tr><td>Bank charges ({{ my_name }}'s transfers)</td><td class="amount">{{ "{:,.2f}".format(r.my_bank_charges_total) }}</td></tr>
+        <tr><td>Bank charges ({{ other_name }}'s transfers)</td><td class="amount">{{ "{:,.2f}".format(r.other_bank_charges_total) }}</td></tr>
+        <tr class="total-row"><td>Total {{ my_name }} spent</td><td class="amount">{{ "{:,.2f}".format(r.my_total_spending) }}</td></tr>
+    </table>
+
+    <table style="margin-top:12px">
+        <tr class="total-row">
+            <td>{{ my_name }}'s remaining in account</td>
+            <td class="amount {% if r.my_remaining < 0 %}deficit{% else %}surplus{% endif %}">
+                {{ "{:,.2f}".format(r.my_remaining) }}
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="section">
+    <h3>{{ other_name }}'s Funds</h3>
+    <table>
+        <tr><td>Credits received into account</td><td class="amount">{{ "{:,.2f}".format(r.other_party_credits_total) }}</td></tr>
+        <tr><td>Fees from {{ my_name }}</td><td class="amount">{{ "{:,.2f}".format(r.fee_to_other) }}</td></tr>
+        <tr class="total-row"><td>Total {{ other_name }}'s funds</td><td class="amount">{{ "{:,.2f}".format(r.other_total_funds) }}</td></tr>
+        <tr><td>Less: M-Pesa to {{ other_name }} ({{ r.other_transfers|length }} transfers)</td><td class="amount deficit">({{ "{:,.2f}".format(r.other_total_withdrawals) }})</td></tr>
+        <tr class="total-row">
+            <td>{{ other_name }}'s remaining in account</td>
+            <td class="amount surplus">{{ "{:,.2f}".format(r.other_remaining) }}</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Verification -->
+{% set sum_check = r.my_remaining + r.other_remaining %}
+{% set matches = (sum_check - r.closing_balance)|abs < 0.02 %}
+<div class="verification {% if not matches %}mismatch{% endif %}">
+    <table>
+        <tr><td>{{ my_name }}'s share</td><td class="amount">{{ "{:,.2f}".format(r.my_remaining) }}</td></tr>
+        <tr><td>{{ other_name }}'s share</td><td class="amount">{{ "{:,.2f}".format(r.other_remaining) }}</td></tr>
+        <tr class="total-row">
+            <td>Total</td>
+            <td class="amount">{{ "{:,.2f}".format(sum_check) }}</td>
+        </tr>
+        <tr>
+            <td>Closing balance</td>
+            <td class="amount">{{ "{:,.2f}".format(r.closing_balance) }}</td>
+        </tr>
+        <tr class="total-row">
+            <td>
+                {% if matches %}
+                    Verified &#10003;
+                {% else %}
+                    Mismatch &#10007; (difference: {{ "{:,.2f}".format(sum_check - r.closing_balance) }})
+                {% endif %}
+            </td>
+            <td></td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

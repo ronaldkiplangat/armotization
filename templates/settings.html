@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Settings - Statement Splitter{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h2>Settings</h2>
+    <form method="POST">
+        <div class="form-group">
+            <label for="display_name">Your Name</label>
+            <input type="text" name="display_name" id="display_name" value="{{ current_user.display_name }}">
+        </div>
+        <div class="form-group">
+            <label for="other_name">Other Party's Name</label>
+            <input type="text" name="other_name" id="other_name" value="{{ current_user.other_name }}">
+        </div>
+        <div class="form-group">
+            <label for="my_phone">Your M-Pesa Number</label>
+            <input type="text" name="my_phone" id="my_phone" value="{{ current_user.my_phone }}">
+            <p class="hint">Format: 254XXXXXXXXX</p>
+        </div>
+        <div class="form-group">
+            <label for="other_phone">{{ current_user.other_name }}'s M-Pesa Number</label>
+            <input type="text" name="other_phone" id="other_phone" value="{{ current_user.other_phone }}">
+        </div>
+        <div class="form-group">
+            <label for="income_keywords">Income Keywords (comma-separated)</label>
+            <input type="text" name="income_keywords" id="income_keywords" value="{{ current_user.income_keywords }}">
+            <p class="hint">Credits containing these keywords are classified as {{ current_user.display_name }}'s income</p>
+        </div>
+        <button type="submit" class="btn btn-full">Save Settings</button>
+    </form>
+</div>
+{% endblock %}
