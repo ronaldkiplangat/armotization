@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Audit Log - Statement Splitter{% endblock %}
+
+{% block extra_css %}
+<style>
+    .audit { background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .audit h2 { padding: 20px 20px 0; font-size: 20px; color: #1a1a2e; margin: 0; }
+    .audit table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .audit th {
+        text-align: left; padding: 10px 16px; font-size: 11px;
+        text-transform: uppercase; letter-spacing: 0.5px; color: #666;
+        background: #f8f9fb; border-bottom: 2px solid #e8ecf1;
+    }
+    .audit td { padding: 10px 16px; border-bottom: 1px solid #f0f2f5; }
+    .audit tr:last-child td { border-bottom: none; }
+    .badge {
+        display: inline-block; padding: 2px 8px; border-radius: 10px;
+        font-size: 11px; font-weight: 600;
+    }
+    .badge-login { background: #e3f2fd; color: #1565c0; }
+    .badge-logout { background: #f3e5f5; color: #7b1fa2; }
+    .badge-upload { background: #e8f5e9; color: #2e7d32; }
+    .badge-view { background: #fff3e0; color: #e65100; }
+    .badge-delete { background: #fce4ec; color: #c62828; }
+    .badge-failed { background: #ffebee; color: #b71c1c; }
+    .badge-register { background: #e0f2f1; color: #00695c; }
+    .ip { font-family: monospace; font-size: 11px; color: #999; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="audit">
+    <h2>Audit Log</h2>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Detail</th>
+            <th>IP Address</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+            <td>{{ log.display_name }}</td>
+            <td>
+                {% if log.action == 'login' %}
+                <span class="badge badge-login">Login</span>
+                {% elif log.action == 'logout' %}
+                <span class="badge badge-logout">Logout</span>
+                {% elif log.action == 'upload' %}
+                <span class="badge badge-upload">Upload</span>
+                {% elif log.action == 'view_report' %}
+                <span class="badge badge-view">View</span>
+                {% elif log.action == 'delete_report' %}
+                <span class="badge badge-delete">Delete</span>
+                {% elif log.action == 'login_failed' %}
+                <span class="badge badge-failed">Failed Login</span>
+                {% elif log.action == 'register' %}
+                <span class="badge badge-register">Register</span>
+                {% else %}
+                <span class="badge">{{ log.action }}</span>
+                {% endif %}
+            </td>
+            <td>{{ log.detail }}</td>
+            <td class="ip">{{ log.ip_address }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

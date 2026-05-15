@@ -3,7 +3,7 @@ import json
 from flask import Flask, render_template, request, redirect, flash, url_for
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
-from models import db, User, StatementRecord
+from models import db, User, StatementRecord, AuditLog
 from parser import parse_statement_with_actual_charges
 
 app = Flask(__name__)
@@ -17,7 +17,6 @@ database_url = os.environ.get(
     "DATABASE_URL",
     f"sqlite:///{os.path.join(BASE_DIR, 'armotization.db')}"
 )
-# Render/Railway provide postgres:// but SQLAlchemy requires postgresql://
 if database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = database_url
@@ -36,6 +35,18 @@ login_manager.login_message_category = "info"
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
+
+def log_event(action, detail="", user_id=None):
+    """Write an audit log entry."""
+    entry = AuditLog(
+        user_id=user_id or (current_user.id if current_user and current_user.is_authenticated else None),
+        action=action,
+        detail=detail,
+        ip_address=request.remote_addr or "",
+    )
+    db.session.add(entry)
+    db.session.commit()
 
 
 def seed_users():
@@ -114,7 +125,7 @@ def register():
         db.session.commit()
 
         login_user(user)
-        flash("Account created successfully")
+        log_event("register", f"New account: {username}")
         return redirect(url_for("dashboard"))
 
     return render_template("register.html")
@@ -132,9 +143,13 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and user.check_password(password):
             login_user(user, remember=True)
+            log_event("login", f"{user.display_name} logged in")
             next_page = request.args.get("next")
             return redirect(next_page or url_for("dashboard"))
 
+        # Log failed attempt
+        log_event("login_failed", f"Failed login for username: {username}",
+                  user_id=user.id if user else None)
         flash("Invalid username or password")
         return redirect(url_for("login"))
 
@@ -144,6 +159,7 @@ def login():
 @app.route("/logout")
 @login_required
 def logout():
+    log_event("logout", f"{current_user.display_name} logged out")
     logout_user()
     flash("Logged out")
     return redirect(url_for("login"))
@@ -159,7 +175,6 @@ def dashboard():
     my_statements = StatementRecord.query.filter_by(user_id=current_user.id)\
         .order_by(StatementRecord.uploaded_at.desc()).all()
 
-    # Find partner: user whose my_phone matches our other_phone
     partner = User.query.filter_by(my_phone=current_user.other_phone).first()
     shared_statements = []
     if partner:
@@ -184,6 +199,13 @@ def settings():
         flash("Settings updated")
         return redirect(url_for("settings"))
     return render_template("settings.html")
+
+
+@app.route("/audit")
+@login_required
+def audit_log():
+    logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(200).all()
+    return render_template("audit.html", logs=logs)
 
 
 # ──────────────────────────────────────────
@@ -229,33 +251,48 @@ def upload():
 
         report_data = _report_to_dict(report)
 
-        record = StatementRecord(
-            user_id=current_user.id,
-            filename=filename,
-            period=report.period,
-            account_name=report.account_name,
-            account_no=report.account_no,
-            currency=report.currency,
-            branch=report.branch,
-            opening_balance=report.opening_balance,
-            closing_balance=report.closing_balance,
-            total_debit=report.total_debit,
-            total_credit=report.total_credit,
-            fee_to_other=report.fee_to_other,
-            my_income_total=report.my_income_total,
-            my_net_income=report.my_net_income,
-            other_party_credits_total=report.other_party_credits_total,
-            my_transfers_total=report.my_transfers_total,
-            other_transfers_total=report.other_transfers_total,
-            my_subscriptions_total=report.my_subscriptions_total,
-            my_bank_charges_total=report.my_bank_charges_total,
-            other_bank_charges_total=report.other_bank_charges_total,
-            my_remaining=report.my_remaining,
-            other_remaining=report.other_remaining,
-            report_json=json.dumps(report_data),
-        )
-        db.session.add(record)
+        # Check for existing record with same filename — regenerate instead of duplicate
+        existing = StatementRecord.query.filter_by(
+            user_id=current_user.id, filename=filename
+        ).first()
+
+        if existing:
+            record = existing
+            record.uploaded_at = db.func.now()
+            action_label = "regenerated"
+        else:
+            record = StatementRecord(user_id=current_user.id, filename=filename)
+            db.session.add(record)
+            action_label = "uploaded"
+
+        record.period = report.period
+        record.account_name = report.account_name
+        record.account_no = report.account_no
+        record.currency = report.currency
+        record.branch = report.branch
+        record.opening_balance = report.opening_balance
+        record.closing_balance = report.closing_balance
+        record.total_debit = report.total_debit
+        record.total_credit = report.total_credit
+        record.fee_to_other = report.fee_to_other
+        record.my_income_total = report.my_income_total
+        record.my_net_income = report.my_net_income
+        record.other_party_credits_total = report.other_party_credits_total
+        record.my_transfers_total = report.my_transfers_total
+        record.other_transfers_total = report.other_transfers_total
+        record.my_subscriptions_total = report.my_subscriptions_total
+        record.my_bank_charges_total = report.my_bank_charges_total
+        record.other_bank_charges_total = report.other_bank_charges_total
+        record.my_remaining = report.my_remaining
+        record.other_remaining = report.other_remaining
+        record.report_json = json.dumps(report_data)
+
         db.session.commit()
+
+        log_event("upload", f"Statement {action_label}: {filename} (period: {report.period})")
+
+        if action_label == "regenerated":
+            flash(f"Statement regenerated (replaced existing {filename})")
 
         return redirect(url_for("view_report", record_id=record.id))
 
@@ -271,8 +308,6 @@ def view_report(record_id):
     owner = db.session.get(User, record.user_id)
 
     is_owner = (record.user_id == current_user.id)
-
-    # Allow partner access: current user's my_phone matches owner's other_phone
     is_partner = (not is_owner and owner
                   and current_user.my_phone == owner.other_phone)
 
@@ -280,9 +315,10 @@ def view_report(record_id):
         flash("Unauthorized")
         return redirect(url_for("dashboard"))
 
+    log_event("view_report", f"Viewed report #{record.id} ({record.filename})")
+
     report_data = json.loads(record.report_json)
 
-    # Names: always show from the uploader's perspective
     return render_template("report.html", r=report_data, record=record,
                            my_name=owner.display_name,
                            other_name=owner.other_name,
@@ -298,6 +334,8 @@ def delete_report(record_id):
     if record.user_id != current_user.id:
         flash("Unauthorized")
         return redirect(url_for("dashboard"))
+
+    log_event("delete_report", f"Deleted report #{record.id} ({record.filename})")
     db.session.delete(record)
     db.session.commit()
     flash("Statement deleted")

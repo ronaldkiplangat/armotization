@@ -40,12 +40,13 @@
     .total-row td { border-top: 2px solid #e8ecf1; }
     .deficit { color: #d93025; }
     .surplus { color: #0f9d58; }
+    .ref { font-size: 11px; color: #999; font-family: monospace; }
+    .masked { color: #aaa; font-style: italic; }
     .verification {
         background: #e8f5e9; border: 1px solid #a5d6a7;
         border-radius: 10px; padding: 20px; margin-top: 24px;
     }
     .verification.mismatch { background: #fce4ec; border-color: #ef9a9a; }
-    .masked { color: #aaa; font-style: italic; }
     @media print {
         .navbar, .no-print { display: none !important; }
         body { padding: 0; background: #fff; }
@@ -90,75 +91,47 @@
 <!-- ═══════════════ CREDITS ═══════════════ -->
 <h2>Credits (Income)</h2>
 
-{% if is_owner %}
-{# ── Ronald sees his own income details ── #}
 <div class="section">
     <h3>{{ my_name }}'s Income</h3>
     <table>
-        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        <tr><th>Date</th><th>Description</th><th>Reference</th><th class="amount">Amount</th></tr>
         {% for t in r.my_income %}
         <tr>
             <td>{{ t.date }}</td>
             <td>{{ t.details[:80] }}</td>
+            <td class="ref">{{ t.reference }}</td>
             <td class="amount">{{ "{:,.2f}".format(t.credit) }}</td>
         </tr>
         {% endfor %}
         <tr class="total-row">
-            <td colspan="2">{{ my_name }}'s Gross Income</td>
+            <td colspan="3">{{ my_name }}'s Gross Income</td>
             <td class="amount">{{ "{:,.2f}".format(r.my_income_total) }}</td>
         </tr>
         <tr class="total-row">
-            <td colspan="2">Less: Fees to {{ other_name }}</td>
+            <td colspan="3">Less: Fees to {{ other_name }}</td>
             <td class="amount deficit">({{ "{:,.2f}".format(r.fee_to_other) }})</td>
         </tr>
         <tr class="total-row">
-            <td colspan="2">{{ my_name }}'s Net Income</td>
+            <td colspan="3">{{ my_name }}'s Net Income</td>
             <td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td>
         </tr>
     </table>
 </div>
-{% else %}
-{# ── Hillary sees income sources but not full transaction refs ── #}
-<div class="section">
-    <h3>{{ my_name }}'s Income</h3>
-    <table>
-        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
-        {% for t in r.my_income %}
-        <tr>
-            <td>{{ t.date }}</td>
-            <td>{{ t.details[:80] }}</td>
-            <td class="amount">{{ "{:,.2f}".format(t.credit) }}</td>
-        </tr>
-        {% endfor %}
-        <tr class="total-row">
-            <td colspan="2">{{ my_name }}'s Gross Income</td>
-            <td class="amount">{{ "{:,.2f}".format(r.my_income_total) }}</td>
-        </tr>
-        <tr class="total-row">
-            <td colspan="2">Less: Fees to {{ other_name }}</td>
-            <td class="amount deficit">({{ "{:,.2f}".format(r.fee_to_other) }})</td>
-        </tr>
-        <tr class="total-row">
-            <td colspan="2">{{ my_name }}'s Net Income</td>
-            <td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td>
-        </tr>
-    </table>
-</div>
-{% endif %}
 
 <div class="section">
     <h3>{{ other_name }}'s Credits</h3>
     <table>
-        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        <tr><th>Date</th><th>Description</th><th>Reference</th><th class="amount">Amount</th></tr>
         {% for t in r.other_party_credits %}
         <tr>
             <td>{{ t.date }}</td>
             <td>{{ t.details[:80] }}</td>
+            <td class="ref">{{ t.reference }}</td>
             <td class="amount">{{ "{:,.2f}".format(t.credit) }}</td>
         </tr>
         {% endfor %}
         <tr class="total-row">
-            <td colspan="2">Subtotal</td>
+            <td colspan="3">Subtotal</td>
             <td class="amount">{{ "{:,.2f}".format(r.other_party_credits_total) }}</td>
         </tr>
     </table>
@@ -168,17 +141,18 @@
 <h2>Debits (Payments Out)</h2>
 
 <div class="section">
-    <h3>M-Pesa Transfers to {{ my_name }}{% if is_owner %} ({{ my_phone }}){% endif %}</h3>
+    <h3>M-Pesa Transfers to {{ my_name }} ({{ my_phone }})</h3>
     <table>
-        <tr><th>Date</th><th class="amount">Amount</th></tr>
+        <tr><th>Date</th><th>Reference</th><th class="amount">Amount</th></tr>
         {% for t in r.my_transfers %}
         <tr>
             <td>{{ t.date }}</td>
+            <td class="ref">{{ t.reference }}</td>
             <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
         </tr>
         {% endfor %}
         <tr class="total-row">
-            <td>Subtotal ({{ r.my_transfers|length }} transfers)</td>
+            <td colspan="2">Subtotal ({{ r.my_transfers|length }} transfers)</td>
             <td class="amount">{{ "{:,.2f}".format(r.my_transfers_total) }}</td>
         </tr>
     </table>
@@ -187,15 +161,16 @@
 <div class="section">
     <h3>M-Pesa Transfers to {{ other_name }} ({{ other_phone }})</h3>
     <table>
-        <tr><th>Date</th><th class="amount">Amount</th></tr>
+        <tr><th>Date</th><th>Reference</th><th class="amount">Amount</th></tr>
         {% for t in r.other_transfers %}
         <tr>
             <td>{{ t.date }}</td>
+            <td class="ref">{{ t.reference }}</td>
             <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
         </tr>
         {% endfor %}
         <tr class="total-row">
-            <td>Subtotal ({{ r.other_transfers|length }} transfers)</td>
+            <td colspan="2">Subtotal ({{ r.other_transfers|length }} transfers)</td>
             <td class="amount">{{ "{:,.2f}".format(r.other_transfers_total) }}</td>
         </tr>
     </table>
@@ -205,27 +180,22 @@
 <div class="section">
     <h3>{{ my_name }}'s Subscriptions / Online Purchases</h3>
     <table>
-        {% if is_owner %}
-        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
+        <tr><th>Date</th><th>Description</th><th>Reference</th><th class="amount">Amount</th></tr>
         {% for t in r.my_subscriptions %}
         <tr>
             <td>{{ t.date }}</td>
+            {% if is_owner %}
             <td>{{ t.details[:80] }}</td>
-            <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
-        </tr>
-        {% endfor %}
-        {% else %}
-        <tr><th>Date</th><th>Description</th><th class="amount">Amount</th></tr>
-        {% for t in r.my_subscriptions %}
-        <tr>
-            <td>{{ t.date }}</td>
+            <td class="ref">{{ t.reference }}</td>
+            {% else %}
             <td class="masked">Online purchase / subscription</td>
+            <td class="ref masked">---</td>
+            {% endif %}
             <td class="amount">{{ "{:,.2f}".format(t.debit) }}</td>
         </tr>
         {% endfor %}
-        {% endif %}
         <tr class="total-row">
-            <td colspan="2">Subtotal ({{ r.my_subscriptions|length }} items)</td>
+            <td colspan="3">Subtotal ({{ r.my_subscriptions|length }} items)</td>
             <td class="amount">{{ "{:,.2f}".format(r.my_subscriptions_total) }}</td>
         </tr>
     </table>
@@ -233,11 +203,8 @@
 {% endif %}
 
 <!-- ═══════════════ BANK CHARGES ═══════════════ -->
-
 <h2>Bank Charges (All Borne by {{ my_name }})</h2>
 
-{% if is_owner %}
-{# ── Ronald sees full per-transfer breakdown ── #}
 <div class="section">
     <h3>Charges on {{ my_name }}'s Transfers</h3>
     <table>
@@ -280,52 +247,13 @@
     </table>
 </div>
 
-{% else %}
-{# ── Hillary sees summary totals only ── #}
-<div class="section">
-    <h3>Bank Charges Summary</h3>
-    <table>
-        <tr><th>Category</th><th class="amount">Amount</th></tr>
-        <tr>
-            <td>Charges on {{ my_name }}'s transfers ({{ r.my_bank_charges|length }} transactions)</td>
-            <td class="amount">{{ "{:,.2f}".format(r.my_bank_charges_total) }}</td>
-        </tr>
-        <tr>
-            <td>Charges on {{ other_name }}'s transfers ({{ r.other_bank_charges|length }} transactions)</td>
-            <td class="amount">{{ "{:,.2f}".format(r.other_bank_charges_total) }}</td>
-        </tr>
-        <tr class="total-row">
-            <td>Total Bank Charges</td>
-            <td class="amount">{{ "{:,.2f}".format(r.my_bank_charges_total + r.other_bank_charges_total) }}</td>
-        </tr>
-    </table>
-</div>
-{% endif %}
-
 <!-- ═══════════════ FINAL SPLIT ═══════════════ -->
 <h2>Money Split</h2>
 
 <div class="section">
     <h3>{{ my_name }}'s Funds</h3>
-    {% if is_owner %}
     <table>
         <tr><td>{{ my_name }}'s net income ({{ "{:,.2f}".format(r.my_income_total) }} - {{ "{:,.2f}".format(r.fee_to_other) }} fees)</td><td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td></tr>
-        <tr><td>Opening balance</td><td class="amount">{{ "{:,.2f}".format(r.opening_balance) }}</td></tr>
-        <tr class="total-row"><td>Total {{ my_name }}'s funds</td><td class="amount">{{ "{:,.2f}".format(r.my_total_funds) }}</td></tr>
-    </table>
-
-    <h3 style="margin-top:16px">{{ my_name }}'s Spending</h3>
-    <table>
-        <tr><td>M-Pesa to {{ my_name }} ({{ r.my_transfers|length }} transfers)</td><td class="amount">{{ "{:,.2f}".format(r.my_transfers_total) }}</td></tr>
-        <tr><td>Subscriptions / purchases</td><td class="amount">{{ "{:,.2f}".format(r.my_subscriptions_total) }}</td></tr>
-        <tr><td>Bank charges ({{ my_name }}'s transfers)</td><td class="amount">{{ "{:,.2f}".format(r.my_bank_charges_total) }}</td></tr>
-        <tr><td>Bank charges ({{ other_name }}'s transfers)</td><td class="amount">{{ "{:,.2f}".format(r.other_bank_charges_total) }}</td></tr>
-        <tr class="total-row"><td>Total {{ my_name }} spent</td><td class="amount">{{ "{:,.2f}".format(r.my_total_spending) }}</td></tr>
-    </table>
-    {% else %}
-    {# ── Hillary sees spending categories with totals, no itemized details ── #}
-    <table>
-        <tr><td>{{ my_name }}'s net income</td><td class="amount">{{ "{:,.2f}".format(r.my_net_income) }}</td></tr>
         <tr><td>Opening balance</td><td class="amount">{{ "{:,.2f}".format(r.opening_balance) }}</td></tr>
         <tr class="total-row"><td>Total {{ my_name }}'s funds</td><td class="amount">{{ "{:,.2f}".format(r.my_total_funds) }}</td></tr>
     </table>
@@ -338,7 +266,6 @@
         <tr><td>Bank charges ({{ other_name }}'s transfers)</td><td class="amount">{{ "{:,.2f}".format(r.other_bank_charges_total) }}</td></tr>
         <tr class="total-row"><td>Total {{ my_name }} spent</td><td class="amount">{{ "{:,.2f}".format(r.my_total_spending) }}</td></tr>
     </table>
-    {% endif %}
 
     <table style="margin-top:12px">
         <tr class="total-row">

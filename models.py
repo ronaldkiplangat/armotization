@@ -72,3 +72,20 @@ class StatementRecord(db.Model):
     @property
     def is_verified(self):
         return abs(self.my_remaining + self.other_remaining - self.closing_balance) < 0.02
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    action = db.Column(db.String(50), nullable=False)   # login, logout, upload, view_report, delete_report, login_failed
+    detail = db.Column(db.String(500), default="")
+    ip_address = db.Column(db.String(45), default="")
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("audit_logs", lazy=True))
+
+    @property
+    def display_name(self):
+        return self.user.display_name if self.user else "Unknown"

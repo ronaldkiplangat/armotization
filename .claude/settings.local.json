@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ':*)",
+      "Bash(pip3 install:*)",
+      "Bash(python3:*)",
+      "Bash(curl -s http://localhost:5050)",
+      "Bash(curl -s -F \"statement=@AccountStatement01101734083001_15MAY2026_7241314.xls\" -F \"fee_to_other=260000\" http://localhost:5050/upload)",
+      "Bash(kill %1)",
+      "Bash(lsof -ti:5050)",
+      "Bash(xargs kill:*)",
+      "Bash(curl:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(grep -v \"^$\")"
+    ]
+  }
+}
