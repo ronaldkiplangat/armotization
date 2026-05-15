@@ -121,4 +121,38 @@
     </div>
     {% endif %}
 </div>
+
+{% if shared_statements %}
+<div class="history" style="margin-top:28px;">
+    <h3>Shared by {{ partner.display_name }}</h3>
+    <table>
+        <tr>
+            <th>Uploaded</th>
+            <th>Period</th>
+            <th>File</th>
+            <th class="amount">{{ partner.display_name }}'s Share</th>
+            <th class="amount">{{ current_user.display_name }}'s Share</th>
+            <th class="amount">Closing</th>
+            <th>Status</th>
+        </tr>
+        {% for s in shared_statements %}
+        <tr>
+            <td>{{ s.uploaded_at.strftime('%d/%m/%Y %H:%M') }}</td>
+            <td>{{ s.period or '-' }}</td>
+            <td><a href="{{ url_for('view_report', record_id=s.id) }}" class="link">View Report</a></td>
+            <td class="amount">{{ "{:,.2f}".format(s.my_remaining) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(s.other_remaining) }}</td>
+            <td class="amount">{{ "{:,.2f}".format(s.closing_balance) }}</td>
+            <td>
+                {% if s.is_verified %}
+                <span class="badge badge-ok">Verified</span>
+                {% else %}
+                <span class="badge badge-err">Mismatch</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
 {% endblock %}

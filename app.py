@@ -152,9 +152,19 @@ def logout():
 @app.route("/")
 @login_required
 def dashboard():
-    statements = StatementRecord.query.filter_by(user_id=current_user.id)\
+    my_statements = StatementRecord.query.filter_by(user_id=current_user.id)\
         .order_by(StatementRecord.uploaded_at.desc()).all()
-    return render_template("dashboard.html", statements=statements)
+
+    # Find partner: user whose my_phone matches our other_phone
+    partner = User.query.filter_by(my_phone=current_user.other_phone).first()
+    shared_statements = []
+    if partner:
+        shared_statements = StatementRecord.query.filter_by(user_id=partner.id)\
+            .order_by(StatementRecord.uploaded_at.desc()).all()
+
+    return render_template("dashboard.html", statements=my_statements,
+                           shared_statements=shared_statements,
+                           partner=partner)
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -254,16 +264,27 @@ def upload():
 @login_required
 def view_report(record_id):
     record = StatementRecord.query.get_or_404(record_id)
-    if record.user_id != current_user.id:
+    owner = db.session.get(User, record.user_id)
+
+    is_owner = (record.user_id == current_user.id)
+
+    # Allow partner access: current user's my_phone matches owner's other_phone
+    is_partner = (not is_owner and owner
+                  and current_user.my_phone == owner.other_phone)
+
+    if not is_owner and not is_partner:
         flash("Unauthorized")
         return redirect(url_for("dashboard"))
 
     report_data = json.loads(record.report_json)
+
+    # Names: always show from the uploader's perspective
     return render_template("report.html", r=report_data, record=record,
-                           my_name=current_user.display_name,
-                           other_name=current_user.other_name,
-                           my_phone=current_user.my_phone,
-                           other_phone=current_user.other_phone)
+                           my_name=owner.display_name,
+                           other_name=owner.other_name,
+                           my_phone=owner.my_phone,
+                           other_phone=owner.other_phone,
+                           is_owner=is_owner)
 
 
 @app.route("/report/<int:record_id>/delete", methods=["POST"])
